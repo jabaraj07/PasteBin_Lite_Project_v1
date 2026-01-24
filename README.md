@@ -80,15 +80,32 @@ This application uses **MongoDB** as its persistence layer, accessed through **M
 
 1. **Serverless Compatibility**: MongoDB works well with serverless platforms like Vercel when using MongoDB Atlas (cloud-hosted MongoDB)
 2. **Document-based Storage**: The paste data structure fits naturally into MongoDB documents
-3. **TTL Index Support**: MongoDB supports TTL indexes which can automatically expire documents, though we implement custom expiry logic for deterministic testing
-4. **Scalability**: MongoDB Atlas provides a managed solution that scales with the application
+3. **Scalability**: MongoDB Atlas provides a managed solution that scales with the application
 
 The database connection is established at application startup and the health check endpoint (`/api/healthz`) verifies the connection status.
 
+### Expiration Handling
+
+**Important**: Expiration is handled manually, not via MongoDB TTL indexes. Here's why:
+
+- `expiresAt` is stored as a **Number** (milliseconds timestamp) rather than a Date object
+- MongoDB TTL indexes only work with Date objects, not Number timestamps
+- This design choice allows deterministic testing via the `TEST_MODE` environment variable
+- Expired pastes are **not automatically deleted** from the database
+- When accessing an expired paste, the application checks `expiresAt < currentTime` and returns 404
+- Expired pastes remain in the database but are treated as "not found" for all practical purposes
+- Manual cleanup of expired pastes can be implemented via a scheduled job if needed, but is not currently included
+
 ## Important Design Decisions
 
-### 1. Deterministic Time for Testing
+### 1. Deterministic Time for Testing and Manual Expiration
 The application supports deterministic expiry testing through the `TEST_MODE` environment variable. When `TEST_MODE=1` is set, the application uses the `x-test-now-ms` request header to determine the current time for expiry calculations. This allows automated tests to control time and verify TTL behavior accurately.
+
+**Expiration Implementation**: Expiration is checked manually in the controller code by comparing `expiresAt` (stored as Number timestamp) with the current time. Expired pastes are not automatically deleted from the database - they remain stored but return 404 when accessed. This approach:
+- Enables deterministic testing (can control "current time" via headers)
+- Avoids reliance on MongoDB TTL indexes (which require Date objects)
+- Keeps expired data available for potential audit/debugging purposes
+- Allows for optional cleanup jobs to be added later if needed
 
 ### 2. Atomic View Count Updates
 View count increments are performed atomically using MongoDB's `findOneAndUpdate` with conditions. This prevents race conditions where concurrent requests might exceed the view limit. The update only succeeds if the current view count is less than the maximum allowed views.

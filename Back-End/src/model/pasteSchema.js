@@ -35,7 +35,10 @@ const pasteSchema = new mongoose.Schema({
     }
 })
 
-pasteSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// Note: MongoDB TTL indexes only work with Date objects, not Number timestamps.
+// Since we store expiresAt as a Number (milliseconds) for deterministic testing,
+// expiration is checked manually in the controller code rather than via TTL index.
+// Expired pastes remain in the database but are treated as "not found" when accessed.
 
 const Paste = mongoose.model('Paste',pasteSchema);
 export default Paste;
