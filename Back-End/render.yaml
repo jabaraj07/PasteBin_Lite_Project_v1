@@ -3,6 +3,7 @@ services:
     name: pastebin-backend
     env: node
     plan: free
+    rootDir: Back-End
     buildCommand: npm install
     startCommand: npm start
     envVars:
@@ -11,6 +12,8 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
+        sync: false
+      - key: FRONTEND_URL
         sync: false
       - key: TEST_MODE
         value: "1"

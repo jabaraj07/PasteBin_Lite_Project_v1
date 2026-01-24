@@ -50,16 +50,21 @@ This guide will walk you through deploying your PasteBin-Lite application with t
 3. **Configure Service**
    - **Name**: `pastebin-backend` (or your preferred name)
    - **Environment**: `Node`
+   - **Root Directory**: `Back-End` ⚠️ **IMPORTANT**: Set this if your repo contains both frontend and backend
    - **Build Command**: `npm install`
    - **Start Command**: `npm start`
-   - **Root Directory**: `Back-End` (if your repo has both frontend and backend)
+   
+   > **Note**: If using `render.yaml`, the root directory is automatically set. If deploying manually, you MUST set the Root Directory to `Back-End` in the Render dashboard, otherwise the build will fail with "package.json not found" error.
 
 4. **Add Environment Variables**
    Click "Advanced" → "Add Environment Variable":
    - `MONGODB_URI`: Your MongoDB Atlas connection string (Required)
    - `NODE_ENV`: `production` (Required - sets the Node.js environment to production)
+   - `FRONTEND_URL`: Your Vercel frontend URL (Required - e.g., `https://your-app.vercel.app` - **NO trailing slash!**)
    - `PORT`: Render will automatically set this (usually 10000) - Optional to override
    - `TEST_MODE`: `1` (Optional - for testing purposes by project reviewers. When set, allows time manipulation via `x-test-now-ms` header for testing scenarios.)
+   
+   > **Important**: `FRONTEND_URL` is used to generate the paste URLs returned by the API. If not set, URLs will default to `http://localhost:3000`.
 
 5. **Deploy**
    - Click "Create Web Service"
@@ -105,14 +110,22 @@ Or if using a monorepo, make sure the frontend code is committed.
 
 3. **Configure Project**
    - **Framework Preset**: Vercel should auto-detect "Create React App"
-   - **Root Directory**: `Front-End/pastebin` (if using monorepo)
+   - **Root Directory**: `Front-End/pastebin` (if using monorepo) ⚠️ **CRITICAL**
    - **Build Command**: `npm run build` (should be auto-detected)
-   - **Output Directory**: `build` (should be auto-detected)
+   - **Output Directory**: `build` (should be auto-detected) ⚠️ **VERIFY THIS**
+   - **Install Command**: `npm install` (should be auto-detected)
+   
+   > **Important**: If you see "Unexpected token '<'" error, verify:
+   > - Root Directory is set to `Front-End/pastebin` (not just `Front-End`)
+   > - Output Directory is set to `build` (not `Front-End/pastebin/build`)
+   > - Build completed successfully (check deployment logs)
 
-4. **Add Environment Variables**
+4. **Add Environment Variables** ⚠️ **CRITICAL STEP**
    Click "Environment Variables" and add:
    - `REACT_APP_BACKEND_URL`: Your Render backend URL (e.g., `https://pastebin-backend.onrender.com`)
+     - **Required**: Without this, your app will show a white page!
      - **Important**: Do NOT include trailing slash
+     - **Example**: `https://pastebin-backend-qify.onrender.com`
 
 5. **Deploy**
    - Click "Deploy"
@@ -158,11 +171,18 @@ For better security, update your backend CORS to allow only your Vercel frontend
 
 ### Backend Issues
 
+- **Build Fails - "package.json not found" or "ENOENT" error**:
+  - ⚠️ **Most Common Issue**: Root Directory is not set correctly
+  - If using `render.yaml`: Make sure `rootDir: Back-End` is specified
+  - If deploying manually: Go to Render dashboard → Settings → Set "Root Directory" to `Back-End`
+  - Verify `package.json` exists in the `Back-End` folder in your GitHub repo
+  - After fixing, trigger a new deployment
+
 - **MongoDB Connection Error**: 
   - Verify `MONGODB_URI` is correct in Render environment variables
   - Check MongoDB Atlas IP whitelist includes Render's IPs (or `0.0.0.0/0`)
 
-- **Build Fails**:
+- **Build Fails (Other Errors)**:
   - Check Render logs for specific errors
   - Ensure `package.json` has correct `start` script
 
@@ -172,14 +192,43 @@ For better security, update your backend CORS to allow only your Vercel frontend
 
 ### Frontend Issues
 
+- **Build Fails on Vercel**:
+  - **Check Build Logs**: Go to Vercel dashboard → Your deployment → View build logs
+  - **Common Causes**:
+    - Missing dependencies: Ensure all packages are in `package.json` (not just `package-lock.json`)
+    - Node.js version mismatch: Vercel uses Node 18.x by default, check if your code needs a specific version
+    - Build command error: Verify `npm run build` works locally
+    - Memory issues: Large builds might need more memory (upgrade plan or optimize)
+    - Syntax errors: Check for any TypeScript/JavaScript syntax errors in your code
+  - **Solution**: 
+    - Run `npm run build` locally to test
+    - Check Vercel build logs for specific error messages
+    - Ensure `package.json` has all dependencies listed
+    - Verify Node.js version compatibility
+
+- **White Page / Blank Screen**:
+  - ⚠️ **Most Common**: Missing `REACT_APP_BACKEND_URL` environment variable
+    - Go to Vercel dashboard → Your project → Settings → Environment Variables
+    - Add `REACT_APP_BACKEND_URL` with your Render backend URL (no trailing slash)
+    - Redeploy after adding the variable
+  - Check browser console (F12) for JavaScript errors
+  - Verify the build completed successfully in Vercel dashboard
+  - Check Vercel deployment logs for build errors
+  - Ensure `vercel.json` is in the `Front-End/pastebin` directory
+  - Try clearing browser cache and hard refresh (Ctrl+Shift+R)
+  - Check if all JavaScript files are loading (Network tab in browser dev tools)
+
 - **API Calls Fail**:
   - Verify `REACT_APP_BACKEND_URL` is set correctly in Vercel
   - Check browser console for CORS errors
   - Ensure backend URL has no trailing slash
+  - Verify backend is running and accessible
 
 - **Build Fails**:
-  - Check Vercel build logs
+  - Check Vercel build logs for specific errors
   - Ensure all dependencies are in `package.json`
+  - Verify Node.js version compatibility
+  - Check for syntax errors in your code
 
 ### Common Issues
 
@@ -197,9 +246,10 @@ For better security, update your backend CORS to allow only your Vercel frontend
 
 ### Backend (Render)
 - **URL Format**: `https://your-service-name.onrender.com`
-- **Required Env Vars**: `MONGODB_URI`, `NODE_ENV`, `PORT` (auto-set)
+- **Required Env Vars**: `MONGODB_URI`, `NODE_ENV`, `FRONTEND_URL`, `PORT` (auto-set)
 - **Optional Env Vars**: `TEST_MODE` (set to `1` for testing purposes)
 - **Health Check**: `/api/healthz`
+- **Note**: `FRONTEND_URL` must be your Vercel frontend URL (no trailing slash) - this is used to generate paste URLs
 
 ### Frontend (Vercel)
 - **URL Format**: `https://your-project-name.vercel.app`
