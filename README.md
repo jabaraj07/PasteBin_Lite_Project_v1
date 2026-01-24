@@ -29,10 +29,12 @@ npm install
 ```
 MONGODB_URI=your_mongodb_connection_string
 PORT=5000
-BASE_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
 ```
 
-**Note:** `BASE_URL` should be your **frontend URL** (where users will access the app), not the backend URL. For local development, this is `http://localhost:3000`. For production (Vercel), this should be your Vercel domain (e.g., `https://your-app.vercel.app`).
+**Note:** 
+- `FRONTEND_URL` should be your **frontend URL** (where users will access the app), not the backend URL. For local development, this is `http://localhost:3000`. For production (Vercel), this should be your Vercel domain (e.g., `https://your-app.vercel.app`).
+- `FRONTEND_URL` is used for CORS configuration and generating paste URLs. The backend also supports `BASE_URL` as a fallback for backward compatibility, but `FRONTEND_URL` is preferred.
 
 4. Start the server:
 ```bash
@@ -58,12 +60,19 @@ cd Front-End/pastebin
 npm install
 ```
 
-3. Start the development server:
+3. Create a `.env` file (optional, for local development):
+```
+REACT_APP_BACKEND_URL=http://localhost:5000
+```
+
+4. Start the development server:
 ```bash
 npm start
 ```
 
 The frontend will run on `http://localhost:3000` and will automatically open in your browser.
+
+**Note:** The frontend automatically trims leading and trailing whitespace from paste content before submission. Whitespace-only content will be rejected with a validation error.
 
 ## Persistence Layer
 
@@ -100,6 +109,15 @@ All paste content rendered in HTML is escaped using a custom `escapeHtml` functi
 ### 6. Field Naming
 The API uses snake_case for request/response fields (`ttl_seconds`, `max_views`, `remaining_views`, `expires_at`) to match the specification, while internal database fields use a mix of camelCase and snake_case for consistency with Mongoose conventions.
 
+### 7. CORS Configuration
+The backend uses CORS (Cross-Origin Resource Sharing) to restrict API access to only the configured frontend URL. This is controlled by the `FRONTEND_URL` environment variable. In production, this prevents unauthorized domains from accessing your API.
+
+### 8. Input Validation and Sanitization
+- Frontend automatically trims leading and trailing whitespace from paste content
+- Whitespace-only content is rejected with a clear error message
+- Content length is validated (max 1MB = 1,048,576 characters)
+- TTL and max_views are validated to be positive integers when provided
+
 ## API Endpoints
 
 - `GET /api/healthz` - Health check endpoint
@@ -120,13 +138,28 @@ The application is designed to pass automated tests that verify:
 
 ## Deployment
 
-For deployment on Vercel or similar serverless platforms:
-1. **Frontend (Vercel)**: Deploy the frontend to Vercel. Note your Vercel domain (e.g., `https://your-app.vercel.app`)
-2. **Backend**: Deploy backend separately (Vercel serverless functions, Railway, Render, etc.)
-3. **Environment Variables**:
-   - Backend: Set `BASE_URL` to your **frontend Vercel URL** (e.g., `https://your-app.vercel.app`)
-   - Backend: Set `MONGODB_URI` to your MongoDB Atlas connection string
-   - Backend: Set `TEST_MODE=1` if needed for automated testing
-   - Frontend: Set `REACT_APP_BACKEND_URL` to your backend API URL
+For detailed deployment instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md).
+
+### Quick Deployment Summary
+
+1. **Frontend (Vercel)**: 
+   - Deploy the frontend to Vercel. Note your Vercel domain (e.g., `https://your-app.vercel.app`)
+   - Set Root Directory to `Front-End/pastebin` (if using monorepo)
+   - **Required Environment Variable**: `REACT_APP_BACKEND_URL` = your backend URL (no trailing slash)
+
+2. **Backend (Render or similar)**:
+   - Deploy backend separately (Render, Railway, etc.)
+   - **Required Environment Variables**:
+     - `MONGODB_URI`: Your MongoDB Atlas connection string
+     - `FRONTEND_URL`: Your frontend Vercel URL (e.g., `https://your-app.vercel.app`) - **no trailing slash**
+     - `NODE_ENV`: `production`
+     - `PORT`: Usually auto-set by platform
+   - **Optional**: `TEST_MODE=1` for automated testing
+   - **Optional**: `BASE_URL` (supported as fallback, but `FRONTEND_URL` is preferred)
+
+3. **CORS Configuration**: 
+   - The backend automatically configures CORS based on `FRONTEND_URL`
+   - This ensures only your frontend domain can access the API
+
 4. The application will automatically connect to MongoDB on startup
 

@@ -20,14 +20,13 @@ const CreateLink = () => {
         setData({
             ...data,
             [e.target.name]: e.target.value,
-            error: ''  // Clear error when user starts typing
+            error: ''  
         })
     }
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         
-        // Trim content to remove leading/trailing whitespace
         const trimmedContent = data.content.trim();
         
         if(!trimmedContent){
@@ -49,7 +48,6 @@ const CreateLink = () => {
             return;
         }
 
-        // TTL and max_views are optional, but if provided, must be >= 1
         // Only validate if the field has a non-empty value
         const ttlValue = data.ttl_seconds?.toString().trim();
         if(ttlValue && ttlValue !== ''){
@@ -77,7 +75,6 @@ const CreateLink = () => {
 
         setData({...data, loading: true, error: ''});
         
-        // Prepare data for API - use trimmed content and only include ttl_seconds and max_views if they have values
         const apiData = {
             content: trimmedContent,
         };
@@ -93,9 +90,7 @@ const CreateLink = () => {
         }
         
         try {
-            console.log('Sending request to create paste:', apiData);
             const Response = await PasteApi.createPaste(apiData);
-            console.log('Response received:', Response.data);
 
             if(!Response.data.id){
                 setData({
