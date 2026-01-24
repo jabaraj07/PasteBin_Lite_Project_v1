@@ -26,17 +26,22 @@ const CreateLink = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if(!data.content.trim()){
+        
+        // Trim content to remove leading/trailing whitespace
+        const trimmedContent = data.content.trim();
+        
+        if(!trimmedContent){
             setData({
                 ...data,
-                error:'Content is required'
+                error:'Content is required',
+                content: ''
             })
             return;
         }
 
         // Check content length limit (1MB = 1,048,576 characters)
         const MAX_CONTENT_LENGTH = 1048576;
-        if(data.content.length > MAX_CONTENT_LENGTH){
+        if(trimmedContent.length > MAX_CONTENT_LENGTH){
             setData({
                 ...data,
                 error:`Content is too long. Maximum length is ${MAX_CONTENT_LENGTH.toLocaleString()} characters (1MB).`
@@ -72,9 +77,9 @@ const CreateLink = () => {
 
         setData({...data, loading: true, error: ''});
         
-        // Prepare data for API - only include ttl_seconds and max_views if they have values
+        // Prepare data for API - use trimmed content and only include ttl_seconds and max_views if they have values
         const apiData = {
-            content: data.content,
+            content: trimmedContent,
         };
         
         // Only add ttl_seconds if it has a valid value (reuse ttlValue from validation above)
@@ -100,6 +105,7 @@ const CreateLink = () => {
                 })
                 return;
             }
+            
 
             // Construct the URL properly - if backend returns undefined, use frontend origin
             let pasteUrl = Response.data.url;
