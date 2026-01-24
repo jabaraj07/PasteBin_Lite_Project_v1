@@ -1,5 +1,5 @@
 import React, {useState} from 'react'
-import { PasteApi } from '../api/config'
+import { PasteApi, BACKEND_URL } from '../api/config'
 import './CreateLink.css'
 
 const CreateLink = () => {
@@ -135,7 +135,7 @@ const CreateLink = () => {
                 setData({
                     ...data,
                     loading: false,
-                    error: 'Cannot connect to server. Please check if the backend is running on http://localhost:5000'
+                    error: `Cannot connect to server. Please check if the backend is running on ${BACKEND_URL}`
                 })
             } else {
                 // Something else happened
