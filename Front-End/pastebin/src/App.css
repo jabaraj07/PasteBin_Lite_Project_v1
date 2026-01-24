@@ -1,0 +1,47 @@
+/* App Component Styles */
+
+.app-container {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    /* overflow-x: hidden;
+    overflow-y: auto; */
+    /* background-color: red; */
+}
+
+/* Prevent unwanted scroll on body */
+body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+}
+
+html {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+
+/* Ensure root element doesn't cause overflow */
+#root {
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .app-container {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .app-container {
+        padding: 10px;
+    }
+}
+
