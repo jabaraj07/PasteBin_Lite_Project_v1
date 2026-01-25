@@ -17,7 +17,10 @@ const escapeHtml = (text) => {
 
 
 export const createPaste = async (req, res) => {
-    const {content, ttl_seconds, max_views} = req.body;
+    // Support both lowercase and capitalized field names for flexibility
+    const {content, ttl_seconds, ttl_Seconds, max_views, max_Views} = req.body;
+    const ttlSeconds = ttl_Seconds !== undefined ? ttl_Seconds : ttl_seconds;
+    const maxViews = max_Views !== undefined ? max_Views : max_views;
     
     // Validate content: must be a non-empty string
     if (!content || typeof content !== 'string' || content.trim().length === 0) {
@@ -31,21 +34,21 @@ export const createPaste = async (req, res) => {
     }
     
     // Validate ttl_seconds: if present, must be an integer >= 1
-    if (ttl_seconds !== undefined && ttl_seconds !== null) {
-        if (!Number.isInteger(ttl_seconds) || ttl_seconds < 1) {
-            return res.status(400).json({error: 'ttl_seconds must be an integer >= 1'})
+    if (ttlSeconds !== undefined && ttlSeconds !== null) {
+        if (!Number.isInteger(ttlSeconds) || ttlSeconds < 1) {
+            return res.status(400).json({error: 'ttl_Seconds must be an integer and greater than 1'})
         }
     }
     
     // Validate max_views: if present, must be an integer >= 1
-    if (max_views !== undefined && max_views !== null) {
-        if (!Number.isInteger(max_views) || max_views < 1) {
-            return res.status(400).json({error: 'max_views must be an integer >= 1'})
+    if (maxViews !== undefined && maxViews !== null) {
+        if (!Number.isInteger(maxViews) || maxViews < 1) {
+            return res.status(400).json({error: 'max_views must be an integer and greater than 1'})
         }
     }
     
     try {
-        const Data = await createPasteData(content, ttl_seconds, max_views);
+        const Data = await createPasteData(content, ttlSeconds, maxViews);
         if (! Data) {
             return res.status(400).json({error: 'Failed to create paste'})
         }
